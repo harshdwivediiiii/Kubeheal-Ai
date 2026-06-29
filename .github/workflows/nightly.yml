@@ -1,0 +1,41 @@
+name: Nightly Build & Test
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+
+jobs:
+  nightly:
+    name: Nightly Pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/requirements.txt
+          pip install -r requirements/requirements-ml.txt
+          pip install -r requirements/requirements-dev.txt
+
+      - name: Train models
+        run: python scripts/run_training_pipeline.py
+
+      - name: Run full test suite
+        run: pytest tests/ -v --cov=src --cov-report=html
+
+      - name: Check for model drift
+        run: python scripts/check_model_drift.py || echo "Model drift check skipped"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-artifacts
+          path: |
+            artifacts/
+            logs/

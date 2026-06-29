@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubeheal-ingress
+  namespace: kubeheal
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: kubeheal.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: kubeheal-backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kubeheal-dashboard
+                port:
+                  number: 8501
+          - path: /analyze
+            pathType: Prefix
+            backend:
+              service:
+                name: kubeheal-ai-analyzer
+                port:
+                  number: 8000

@@ -1,0 +1,81 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [main]
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.31.0"
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Update image tags
+        run: |
+          cd k8s
+          sed -i "s|image: .*kubeheal-backend:.*|image: ${{ env.DOCKER_USERNAME }}/kubeheal-backend:${{ env.IMAGE_TAG }}|g" deployment.yaml
+          sed -i "s|image: .*kubeheal-dashboard:.*|image: ${{ env.DOCKER_USERNAME }}/kubeheal-dashboard:${{ env.IMAGE_TAG }}|g" deployment.yaml
+          sed -i "s|image: .*kubeheal-ai-analyzer:.*|image: ${{ env.DOCKER_USERNAME }}/kubeheal-ai-analyzer:${{ env.IMAGE_TAG }}|g" deployment.yaml
+
+      - name: Create namespace
+        run: |
+          kubectl create namespace kubeheal --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply RBAC
+        run: kubectl apply -f k8s/rbac.yaml
+
+      - name: Apply ConfigMap
+        run: kubectl apply -f k8s/configmap.yaml
+
+      - name: Apply Secrets
+        run: kubectl apply -f k8s/secrets.yaml
+
+      - name: Deploy applications
+        run: kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+
+      - name: Apply autoscaling
+        run: kubectl apply -f k8s/hpa.yaml
+
+      - name: Apply ingress
+        run: kubectl apply -f k8s/ingress.yaml
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/kubeheal-backend -n kubeheal --timeout=300s
+          kubectl rollout status deployment/kubeheal-dashboard -n kubeheal --timeout=300s
+          kubectl rollout status deployment/kubeheal-ai-analyzer -n kubeheal --timeout=300s
+
+      - name: Deploy monitoring stack
+        run: |
+          kubectl apply -f k8s/monitoring/ || true
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace \
+            --set grafana.adminPassword=${{ secrets.GRAFANA_PASSWORD || 'admin' }}
+
+      - name: Deployment status
+        run: |
+          echo "✅ Deployment successful!"
+          kubectl get pods -n kubeheal

@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeheal-backend
+  namespace: kubeheal
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeheal-ai-analyzer
+  namespace: kubeheal
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubeheal-pod-reader
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeheal-backend-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubeheal-pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: kubeheal-backend
+    namespace: kubeheal
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeheal-ai-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubeheal-pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: kubeheal-ai-analyzer
+    namespace: kubeheal

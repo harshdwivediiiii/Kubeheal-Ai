@@ -1,0 +1,119 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+  DOCKER_REGISTRY: docker.io
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black mypy
+
+      - name: Run Ruff linter
+        run: ruff check src/ scripts/ --output-format=github
+
+      - name: Check formatting with Black
+        run: black --check src/ scripts/
+
+  test:
+    name: Run Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/requirements.txt
+          pip install -r requirements/requirements-dev.txt
+          pip install pytest pytest-cov
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=term
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  build:
+    name: Build Docker Images
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/kubeheal-backend:${{ env.IMAGE_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/kubeheal-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push dashboard
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.dashboard
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/kubeheal-dashboard:${{ env.IMAGE_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/kubeheal-dashboard:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push AI analyzer
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.ai-analyzer
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/kubeheal-ai-analyzer:${{ env.IMAGE_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/kubeheal-ai-analyzer:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
