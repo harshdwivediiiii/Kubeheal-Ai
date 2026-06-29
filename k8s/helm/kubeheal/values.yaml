@@ -1,0 +1,94 @@
+# KubeHeal AI Helm Chart Values
+
+replicaCount: 3
+
+image:
+  repository: harshdwivediiiii/kubeheal
+  tag: latest
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+backend:
+  image:
+    repository: harshdwivediiiii/kubeheal-backend
+    tag: latest
+  replicas: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  service:
+    port: 8000
+  env:
+    MONGODB_URI: "mongodb://kubeheal-mongodb:27017/kubeheal"
+    REDIS_HOST: "kubeheal-redis"
+    ENVIRONMENT: "production"
+
+dashboard:
+  image:
+    repository: harshdwivediiiii/kubeheal-dashboard
+    tag: latest
+  replicas: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  service:
+    port: 8501
+
+aiAnalyzer:
+  image:
+    repository: harshdwivediiiii/kubeheal-ai-analyzer
+    tag: latest
+  replicas: 2
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  service:
+    port: 8000
+
+mongodb:
+  enabled: true
+  image: mongo:7
+  storage: 10Gi
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+
+prometheus:
+  enabled: true
+  storage: 10Gi
+
+grafana:
+  enabled: true
+  adminPassword: admin
+  storage: 5Gi
+
+ingress:
+  enabled: true
+  host: kubeheal.local
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+rbac:
+  create: true
+
+networkPolicy:
+  create: true

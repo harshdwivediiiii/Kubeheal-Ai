@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+rule_files:
+  - "alerts/*.yml"
+
+scrape_configs:
+  - job_name: "kubernetes-pods"
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+
+  - job_name: "kubeheal-backend"
+    static_configs:
+      - targets: ["kubeheal-backend:8000"]
+
+  - job_name: "kubeheal-ai-analyzer"
+    static_configs:
+      - targets: ["kubeheal-ai-analyzer:8000"]
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

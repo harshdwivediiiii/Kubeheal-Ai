@@ -1,0 +1,13 @@
+# Jupyter notebook dependencies
+
+-r requirements.txt
+-r requirements-ml.txt
+-r requirements-llm.txt
+
+jupyter==1.1.1
+jupyterlab==4.2.5
+ipywidgets==8.1.5
+ipykernel==6.29.5
+kaleido==0.2.1
+nbformat==5.10.4
+papermill==2.6.0

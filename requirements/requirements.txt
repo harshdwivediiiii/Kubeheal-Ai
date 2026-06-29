@@ -1,0 +1,13 @@
+# Core dependencies for KubeHeal AI
+# Base requirements file - all projects should install this
+
+python-dotenv==1.0.1
+pyyaml==6.0.2
+requests==2.32.3
+tqdm==4.66.5
+click==8.1.7
+rich==13.9.4
+loguru==0.7.2
+pydantic==2.9.2
+pydantic-settings==2.6.0
+typer==0.12.5

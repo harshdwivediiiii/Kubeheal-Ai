@@ -1,0 +1,21 @@
+apiVersion: v2
+name: kubeheal
+description: KubeHeal AI - Self-healing Kubernetes with AI-powered diagnostics
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+icon: https://raw.githubusercontent.com/harshdwivediiiii/Kubeheal-Ai/main/docs/kubeheals-ai.png
+
+keywords:
+  - kubernetes
+  - ai
+  - self-healing
+  - monitoring
+  - ml
+
+maintainers:
+  - name: Harsh Dwivedi
+    email: harshdwivedi@example.com
+
+sources:
+  - https://github.com/harshdwivediiiii/Kubeheal-Ai

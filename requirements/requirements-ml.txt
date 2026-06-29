@@ -1,0 +1,31 @@
+# Machine learning dependencies
+
+-r requirements.txt
+
+# Core ML
+numpy==1.26.4
+pandas==2.2.3
+scikit-learn==1.5.2
+scipy==1.14.1
+
+# Tree-based models
+xgboost==2.1.1
+lightgbm==4.5.0
+
+# Deep Learning
+torch==2.4.1
+torchvision==0.19.1
+pytorch-lightning==2.4.0
+
+# Autoencoders & Anomaly Detection
+pyod==2.0.1
+
+# Feature engineering
+feature-engine==1.8.2
+category-encoders==2.6.4
+
+# Evaluation
+mlflow==2.17.0
+hyperopt==0.2.7
+optuna==4.0.0
+yellowbrick==1.5

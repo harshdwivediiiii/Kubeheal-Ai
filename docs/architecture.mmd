@@ -1,0 +1,45 @@
+flowchart TD
+    DEV([👨‍💻 Developer]) -->|git push| GH[GitHub Repository]
+    GH -->|triggers| GA[GitHub Actions\nCI/CD Pipeline]
+    GA -->|docker build\nkubectl apply| MK
+
+    subgraph MK[🏗️ Minikube Cluster]
+        subgraph APP[Default Namespace]
+            NA[kubeheal-app\nNode.js Pod\nreplicas: 2]
+            AI[ai-analyzer\nFastAPI Pod]
+        end
+
+        subgraph MON[Monitoring Namespace]
+            PR[Prometheus\nmetrics store]
+            GR[Grafana\ndashboards]
+            PR -->|visualize| GR
+        end
+
+        NA -->|/metrics\nscrape| PR
+        AI -->|reads pod logs\nvia K8s API| NA
+    end
+
+    NA -->|crash\nprocess.exit 1| CRASH[💥 Pod Crashes\nrestart_count++]
+    CRASH -->|Kubernetes\ndetects via\nliveness probe| NA
+
+    CRASH -->|restart_count ≥ 3| HL
+
+    subgraph HL[🔧 heal.py - runs on Mac]
+        H1[1. detect unhealthy pod]
+        H2[2. call ai-analyzer]
+        H3[3. get root cause + fix]
+        H4[4. delete pod]
+        H1 --> H2 --> H3 --> H4
+    end
+
+    H4 -->|kubectl delete pod| NA
+    AI -->|diagnosis +\nsuggested fix| H3
+
+    style MK fill:#1a1a2e,stroke:#4a90d9,color:#fff
+    style APP fill:#16213e,stroke:#4a90d9,color:#fff
+    style MON fill:#16213e,stroke:#e94560,color:#fff
+    style HL fill:#0f3460,stroke:#e94560,color:#fff
+    style CRASH fill:#e94560,stroke:#fff,color:#fff
+    style DEV fill:#4a90d9,stroke:#fff,color:#fff
+    style GH fill:#333,stroke:#fff,color:#fff
+    style GA fill:#2ea44f,stroke:#fff,color:#fff

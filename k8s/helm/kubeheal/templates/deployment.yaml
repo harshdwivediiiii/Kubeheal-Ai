@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubeheal.fullname" . }}-backend
+  labels:
+    {{- include "kubeheal.labels" . | nindent 4 }}
+    component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "kubeheal.selectorLabels" . | nindent 6 }}
+      component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "kubeheal.selectorLabels" . | nindent 8 }}
+        component: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.service.port }}
+          env:
+            {{- range $key, $value := .Values.backend.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubeheal.fullname" . }}-dashboard
+  labels:
+    {{- include "kubeheal.labels" . | nindent 4 }}
+    component: dashboard
+spec:
+  replicas: {{ .Values.dashboard.replicas }}
+  selector:
+    matchLabels:
+      {{- include "kubeheal.selectorLabels" . | nindent 6 }}
+      component: dashboard
+  template:
+    metadata:
+      labels:
+        {{- include "kubeheal.selectorLabels" . | nindent 8 }}
+        component: dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.dashboard.service.port }}
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubeheal.fullname" . }}-ai-analyzer
+  labels:
+    {{- include "kubeheal.labels" . | nindent 4 }}
+    component: ai-analyzer
+spec:
+  replicas: {{ .Values.aiAnalyzer.replicas }}
+  selector:
+    matchLabels:
+      {{- include "kubeheal.selectorLabels" . | nindent 6 }}
+      component: ai-analyzer
+  template:
+    metadata:
+      labels:
+        {{- include "kubeheal.selectorLabels" . | nindent 8 }}
+        component: ai-analyzer
+    spec:
+      containers:
+        - name: ai-analyzer
+          image: "{{ .Values.aiAnalyzer.image.repository }}:{{ .Values.aiAnalyzer.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.aiAnalyzer.service.port }}
+          resources:
+            {{- toYaml .Values.aiAnalyzer.resources | nindent 12 }}

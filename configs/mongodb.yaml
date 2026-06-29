@@ -1,0 +1,57 @@
+database: kubeheal
+uri: mongodb://localhost:27017
+
+collections:
+  pods:
+    indexes:
+      - key: [{name: 1}]
+        unique: true
+      - key: [{namespace: 1}, {status: 1}]
+      - key: [{restart_count: -1}]
+
+  nodes:
+    indexes:
+      - key: [{name: 1}]
+        unique: true
+      - key: [{status: 1}]
+
+  events:
+    indexes:
+      - key: [{pod_name: 1}, {timestamp: -1}]
+      - key: [{type: 1}, {reason: 1}]
+      - key: [{timestamp: -1}]
+
+  alerts:
+    indexes:
+      - key: [{severity: 1}, {status: 1}]
+      - key: [{timestamp: -1}]
+      - key: [{pod_name: 1}]
+
+  metrics:
+    indexes:
+      - key: [{pod_name: 1}, {timestamp: -1}]
+      - key: [{metric_type: 1}]
+      - key: [{timestamp: -1}]
+
+  predictions:
+    indexes:
+      - key: [{pod_name: 1}, {prediction_type: 1}]
+      - key: [{timestamp: -1}]
+      - key: [{confidence: -1}]
+
+  logs:
+    indexes:
+      - key: [{pod_name: 1}, {timestamp: -1}]
+      - key: [{level: 1}]
+      - key: [{message: "text"}]
+
+  incidents:
+    indexes:
+      - key: [{status: 1}, {severity: 1}]
+      - key: [{pod_name: 1}]
+      - key: [{created_at: -1}]
+
+  knowledge_base:
+    indexes:
+      - key: [{category: 1}]
+      - key: [{tags: 1}]

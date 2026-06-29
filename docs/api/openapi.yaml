@@ -1,0 +1,128 @@
+openapi: "3.1.0"
+info:
+  title: KubeHeal AI API
+  description: Self-healing Kubernetes system with AI-powered diagnostics
+  version: 1.0.0
+  contact:
+    name: Harsh Dwivedi
+    url: https://github.com/harshdwivediiiii/Kubeheal-Ai
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://kubeheal.ai/api
+    description: Production
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Health]
+      responses:
+        "200":
+          description: Service is healthy
+
+  /pods/:
+    get:
+      summary: List all pods
+      tags: [Pods]
+      parameters:
+        - name: namespace
+          in: query
+          schema:
+            type: string
+            default: default
+      responses:
+        "200":
+          description: List of pods
+
+  /pods/{namespace}/{pod_name}/logs:
+    get:
+      summary: Get pod logs
+      tags: [Pods]
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pod_name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tail_lines
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Pod logs
+
+  /alerts/:
+    get:
+      summary: List alerts
+      tags: [Alerts]
+      parameters:
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of alerts
+
+  /analyze/logs:
+    post:
+      summary: Analyze pod logs
+      tags: [Analysis]
+      parameters:
+        - name: namespace
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pod_name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: previous
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Analysis results
+
+  /metrics/cluster:
+    get:
+      summary: Get cluster metrics
+      tags: [Metrics]
+      responses:
+        "200":
+          description: Cluster metrics
+
+  /auth/token:
+    post:
+      summary: Get access token
+      tags: [Authentication]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Access token
