@@ -1,160 +1,226 @@
 # KubeHeal AI
 
-> Self-healing Kubernetes system with AI-powered log analysis, automated failure detection, and Prometheus/Grafana monitoring — running fully local on Minikube.
+> Self-healing Kubernetes system with AI-powered log analysis, automated failure detection, ML-based predictions, RAG-based diagnostics, and Prometheus/Grafana monitoring — running fully local on Minikube or production on any Kubernetes cluster.
 
 ![Architecture](docs/architecture.png)
 
 ---
 
-## Demo
+## 🩺 What it does
 
-<!-- Add your demo GIF here after recording -->
-<!-- ![Demo](docs/demo.gif) -->
+KubeHeal AI is a complete production-grade platform that:
 
----
-
-## What it does
-
-When a pod crashes repeatedly, KubeHeal AI:
-1. **Detects** the failure (restart count ≥ 3 or CrashLoopBackOff)
-2. **Diagnoses** the root cause by reading pod logs via Kubernetes API
-3. **Suggests a fix** using pattern-based log analysis
-4. **Heals automatically** by deleting the broken pod — Kubernetes recreates it clean
+1. **Detects** failures (CrashLoopBackOff, OOMKilled, ImagePullBackOff, etc.)
+2. **Diagnoses** root causes via ML models (RandomForest, XGBoost, LightGBM)
+3. **Predicts** failures before they happen using anomaly detection
+4. **Retrieves** knowledge via RAG system (FAISS/ChromaDB + Sentence Transformers)
+5. **Suggests** fixes using pattern-based analysis and LLM integration
+6. **Heals** automatically by restarting pods or adjusting resources
+7. **Monitors** everything with Prometheus + Grafana
 
 ---
 
-## Stack
-
-| Layer | Technology |
-|---|---|
-| App | Node.js + Express |
-| Container | Docker |
-| Orchestration | Kubernetes (Minikube) |
-| Monitoring | Prometheus + Grafana (Helm) |
-| AI Analyzer | Python FastAPI + Kubernetes client |
-| Self-Healing | Python automation script |
-| CI/CD | GitHub Actions |
-
----
-
-## Project Structure
+## 🏗️ Architecture
 
 ```
-kubeheal-ai/
-├── app/                    # Node.js app
-│   ├── index.js
-│   └── package.json
-├── ai-analyzer/            # FastAPI log analyzer
-│   ├── main.py
-│   ├── requirements.txt
-│   └── Dockerfile
-├── healer/                 # Self-healing script
-│   └── heal.py
-├── k8s/                    # Kubernetes manifests
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── ai-analyzer/
-│       ├── rbac.yaml
-│       ├── deployment.yaml
-│       └── service.yaml
-├── docs/
-│   └── architecture.png
-├── Dockerfile
-└── .github/workflows/
-    └── deploy.yml
+┌─────────────────────────────────────────────────────────────┐
+│  Streamlit Dashboard  │  Grafana  │  FastAPI (Swagger)      │
+├─────────────────────────────────────────────────────────────┤
+│  ML Models │ RAG System │ LLM Integration │ Self-Healing     │
+├─────────────────────────────────────────────────────────────┤
+│  MongoDB │ Redis │ Prometheus │ Kubernetes API              │
+├─────────────────────────────────────────────────────────────┤
+│  Docker │ Kubernetes (Minikube) │ Helm │ GitHub Actions      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Local Setup
+## 📁 Project Structure
+
+```
+Kubeheal-Ai/
+├── src/
+│   ├── backend/           # FastAPI backend
+│   │   ├── api/           # REST API routes
+│   │   ├── core/          # Config, security, database
+│   │   ├── models/        # Pydantic models
+│   │   ├── services/      # Business logic
+│   │   └── utils/         # Helpers, logging
+│   ├── dashboard/         # Streamlit dashboard
+│   │   ├── app.py         # Main dashboard
+│   │   ├── components/    # Reusable components
+│   │   └── pages/         # Dashboard pages
+│   └── models/
+│       ├── ml/            # ML model training
+│       ├── llm/           # LLM inference
+│       └── rag/           # RAG system
+├── app/                   # Node.js test app
+├── ai-analyzer/           # Legacy AI analyzer
+├── healer/                # Self-healing agent
+├── k8s/                   # Kubernetes manifests + Helm chart
+├── docker/                # Dockerfiles + Compose
+├── configs/               # YAML configs, Prometheus, Grafana
+├── data/                  # Datasets (raw/processed/features)
+├── notebooks/             # Jupyter notebooks
+├── tests/                 # Unit, integration, load tests
+├── scripts/               # Utility scripts
+├── docs/                  # Documentation
+├── requirements/          # Python dependencies
+├── artifacts/             # Trained models, plots
+├── logs/                  # Application logs
+└── .github/workflows/     # CI/CD pipelines
+```
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Docker Desktop
-- Minikube
-- kubectl
-- Helm
-- Python 3.9+
+- Python 3.9+, Docker Desktop, Minikube, kubectl, Helm
 
-### 1 — Start cluster
+### 1. Setup
 ```bash
-minikube start --driver=docker
-eval $(minikube docker-env)
+git clone https://github.com/harshdwivediiiii/Kubeheal-Ai.git
+cd Kubeheal-Ai
+python3 -m venv .venv
+source .venv/bin/activate
+make install
 ```
 
-### 2 — Build and deploy the app
+### 2. Train Models
 ```bash
-docker build -t kubeheal-app:latest .
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl get pods -w
+python scripts/run_training_pipeline.py
 ```
 
-### 3 — Install Prometheus + Grafana
+### 3. Run Services
 ```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install monitoring prometheus-community/kube-prometheus-stack \
-  --namespace monitoring --create-namespace
+# Terminal 1: FastAPI Backend
+make run-api
+
+# Terminal 2: Streamlit Dashboard
+make run-dashboard
+
+# Terminal 3: Self-Healing Agent
+python healer/heal.py
 ```
 
-### 4 — Deploy AI Analyzer
+### 4. Docker Deployment
 ```bash
-docker build -t ai-analyzer:latest -f ai-analyzer/Dockerfile ai-analyzer/
-kubectl apply -f k8s/ai-analyzer/rbac.yaml
-kubectl apply -f k8s/ai-analyzer/deployment.yaml
-kubectl apply -f k8s/ai-analyzer/service.yaml
+make docker-build
+make docker-up
 ```
 
-### 5 — Run self-healing script
+### 5. Kubernetes Deployment
 ```bash
-pip3 install kubernetes requests
-python3 healer/heal.py
-```
-
-### 6 — Access services
-```bash
-# App
-kubectl port-forward deployment/kubeheal-app 8080:3000
-
-# AI Analyzer
-kubectl port-forward svc/ai-analyzer 8001:8000
-
-# Grafana
-kubectl port-forward -n monitoring svc/monitoring-grafana 3001:80
+minikube start --driver=docker --cpus=4 --memory=8192
+make k8s-deploy
 ```
 
 ---
 
-## API Endpoints
+## 📊 AI/ML Features
 
-### kubeheal-app
-| Endpoint | Description |
-|---|---|
-| `GET /` | App status + hostname |
-| `GET /healthz` | Health check |
-| `GET /crash` | Trigger intentional crash (Phase 3) |
-
-### ai-analyzer
-| Endpoint | Description |
-|---|---|
-| `GET /pods/{namespace}` | List pods with restart counts |
-| `GET /analyze/{namespace}/{pod}` | Analyze current pod logs |
-| `GET /analyze/{namespace}/{pod}?previous=true` | Analyze crashed pod logs |
+| Model | Type | Purpose |
+|-------|------|---------|
+| RandomForest | Classification | Failure prediction |
+| XGBoost | Classification | Failure prediction |
+| LightGBM | Classification | Failure prediction |
+| Isolation Forest | Anomaly Detection | Metric anomalies |
+| Gradient Boosting | Classification | Severity classification |
+| Sentence Transformers | Embeddings | RAG system |
+| LLM (OpenAI/Anthropic/Groq) | Text Generation | Fix suggestions |
 
 ---
 
-## Example
+## 🔌 API Endpoints
 
-```bash
-curl "http://localhost:8001/analyze/default/kubeheal-app-xxx?previous=true"
-```
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | Health check |
+| `POST /auth/token` | JWT authentication |
+| `GET /pods/` | List all pods |
+| `GET /pods/{ns}/{pod}/logs` | Get pod logs |
+| `GET /pods/{ns}/{pod}/predict` | Predict pod failure |
+| `GET /alerts/` | List alerts |
+| `POST /alerts/rules` | Create alert rule |
+| `POST /analyze/logs` | Analyze pod logs |
+| `POST /analyze/root-cause` | Root cause analysis |
+| `POST /analyze/suggest-fix` | Get fix suggestion |
+| `GET /metrics/cluster` | Cluster metrics |
+| `GET /metrics/prometheus/query` | PromQL query |
 
-```json
-{
-  "pod": "kubeheal-app-xxx",
-  "issue": "Application called process.exit — intentional or unhandled crash.",
-  "fix": "Check app code for unhandled exceptions or explicit exit calls.",
-  "matched_pattern": "process.exit"
-}
-```
-# Kubeheal-Ai
+---
+
+## 🐳 Docker Images
+
+- `kubeheal-backend` - FastAPI backend
+- `kubeheal-dashboard` - Streamlit dashboard
+- `kubeheal-ai-analyzer` - ML/AI service
+
+---
+
+## ☸️ Kubernetes
+
+- Deployments with HPA autoscaling
+- Services with ClusterIP
+- Ingress with nginx
+- RBAC for pod access
+- ConfigMaps and Secrets
+- PersistentVolumeClaims
+- Network policies
+- Helm chart included
+
+---
+
+## 📈 Monitoring
+
+- Prometheus metrics scraping
+- Grafana dashboards (auto-provisioned)
+- Alertmanager rules
+- Custom alert rules for K8s failures
+- Node Exporter integration
+
+---
+
+## 🤖 CI/CD
+
+- GitHub Actions: lint → test → build → push → deploy
+- Docker image building and pushing
+- Automatic k8s deployment
+- Nightly model retraining
+- Code coverage reports
+
+---
+
+## 📚 Datasets
+
+The project includes 25+ datasets for training:
+- Kubernetes Pod Failure, Prometheus Metrics, Linux Logs
+- HDFS, BGL, OpenStack logs
+- Failure Prediction, Anomaly Detection
+- Server/Container/Node Metrics
+- Synthetic CrashLoopBackOff data
+- CVE, MITRE ATT&CK, Incident Reports
+
+---
+
+## 🛡️ License
+
+MIT License - see [LICENSE](LICENSE)
+
+---
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+## 📋 Roadmap
+
+See [ROADMAP.md](docs/roadmap.md)
+
+---
+
+Built with ❤️ by [Harsh Dwivedi](https://github.com/harshdwivediiiii)

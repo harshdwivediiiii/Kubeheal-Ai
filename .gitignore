@@ -65,3 +65,6 @@ npm-debug.log
 # Vector DBs
 *.faiss
 chroma_db/
+kubectl
+minikube-darwin-arm64
+minikube-linux-amd64
